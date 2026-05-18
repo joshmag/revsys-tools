@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BITS Org Charts — May 2026</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; font-size: 13px; line-height: 1.5; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  .header { margin-bottom: 20px; }
+  .header h1 { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+  .header p { font-size: 12px; color: #5f5e5a; margin-top: 2px; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { font-size: 12px; padding: 6px 14px; border-radius: 6px; border: 0.5px solid #ccc; background: #fff; color: #5f5e5a; cursor: pointer; }
+  .tab.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Org chart styles */
+  .org-section { margin-bottom: 24px; }
+  .org-section h3 { font-size: 13px; font-weight: 600; color: #5f5e5a; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
+
+  .cio-box { background: #1a1a2e; color: #fff; border-radius: 8px; padding: 10px 16px; display: inline-block; margin-bottom: 16px; }
+  .cio-box .name { font-size: 14px; font-weight: 600; }
+  .cio-box .title { font-size: 11px; color: #b4b2a9; }
+
+  .direct-reports { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+  .dept-card { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 8px; padding: 10px 12px; }
+  .dept-card.highlight { border-left: 3px solid #185fa5; }
+  .dept-card.josh-highlight { border-left: 3px solid #ba7517; background: #fffde7; }
+  .dept-card .dept-name { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+  .dept-card .dept-leader { font-size: 11px; color: #185fa5; margin-top: 2px; }
+  .dept-card .dept-note { font-size: 11px; color: #5f5e5a; margin-top: 4px; }
+
+  /* RevSys tree */
+  .revsys-leader { background: #185fa5; color: #fff; border-radius: 8px; padding: 10px 14px; display: inline-block; margin-bottom: 16px; }
+  .revsys-leader .name { font-size: 14px; font-weight: 600; }
+  .revsys-leader .title { font-size: 11px; color: #b5d4f4; }
+
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; margin-bottom: 16px; }
+  .person-card { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 8px; padding: 9px 11px; }
+  .person-card.sublead { border-top: 2px solid #185fa5; }
+  .person-card.over { border-left: 2px solid #a32d2d; }
+  .person-card.tbh { border: 0.5px dashed #b4b2a9; background: #f9f9f7; }
+  .person-card .pname { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+  .person-card .prole { font-size: 11px; color: #5f5e5a; }
+  .person-card .ptag { font-size: 10px; margin-top: 4px; padding: 1px 6px; border-radius: 4px; display: inline-block; }
+  .tag-over { background: #fcebeb; color: #a32d2d; }
+  .tag-ai { background: #e6f1fb; color: #185fa5; }
+  .tag-nights { background: #faeeda; color: #854f0b; }
+  .tag-sublead { background: #e1f5ee; color: #085041; }
+
+  .sublead-section { margin-left: 20px; margin-bottom: 12px; border-left: 2px solid #e0dfd8; padding-left: 12px; }
+  .sublead-header { font-size: 11px; font-weight: 600; color: #185fa5; margin-bottom: 6px; }
+  .sublead-members { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sublead-member { background: #f0f4fa; border-radius: 5px; padding: 4px 8px; font-size: 11px; color: #1a1a1a; }
+
+  /* Future state */
+  .phase-card { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .phase-card.phase1 { border-left: 4px solid #0f6e56; }
+  .phase-card.phase2 { border-left: 4px solid #ba7517; }
+  .phase-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .phase-card.phase1 .phase-title { color: #0f6e56; }
+  .phase-card.phase2 .phase-title { color: #ba7517; }
+  .phase-body { font-size: 12px; color: #1a1a1a; line-height: 1.6; }
+
+  .josh-future { background: #fffde7; border: 1px solid #f9d71c44; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  .josh-future h4 { font-size: 13px; font-weight: 600; color: #854f0b; margin-bottom: 8px; }
+  .future-reports { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .future-person { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 6px; padding: 6px 10px; font-size: 12px; }
+  .future-person .fn { font-weight: 600; color: #1a1a1a; }
+  .future-person .fr { color: #5f5e5a; font-size: 11px; }
+
+  .change-note { background: #f5f4f0; border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #5f5e5a; margin-top: 8px; }
+  .change-note strong { color: #1a1a1a; }
+
+  /* EPMO org */
+  .epmo-leader { background: #534ab7; color: #fff; border-radius: 8px; padding: 10px 14px; display: inline-block; margin-bottom: 14px; }
+  .epmo-leader .name { font-size: 14px; font-weight: 600; }
+  .epmo-leader .title { font-size: 11px; color: #cecbf6; }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; font-size: 11px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; color: #5f5e5a; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  .section-divider { border: none; border-top: 0.5px solid #e0dfd8; margin: 20px 0; }
+
+  .callout { background: #e6f1fb; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 12px; color: #1a1a1a; }
+  .callout strong { color: #0c447c; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>BITS Org Charts</h1>
+    <p>Business Innovation &amp; Technology Services &nbsp;·&nbsp; As of May 15, 2026 &nbsp;·&nbsp; Source: Org (04.30.26).pptx</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">BITS Overview</button>
+    <button class="tab" onclick="showTab('revsys')">Revenue Systems</button>
+    <button class="tab" onclick="showTab('epmo')">Enterprise PMO</button>
+    <button class="tab" onclick="showTab('future')">Future State</button>
+  </div>
+
+  <!-- BITS OVERVIEW -->
+  <div class="panel active" id="tab-overview">
+    <div class="org-section">
+      <div class="cio-box">
+        <div class="name">Laleh Jabalbarez</div>
+        <div class="title">CIO — BITS</div>
+      </div>
+      <div style="font-size:11px;color:#5f5e5a;margin-bottom:10px;">7 direct report groups</div>
+      <div class="direct-reports">
+        <div class="dept-card highlight">
+          <div class="dept-name">Revenue Systems</div>
+          <div class="dept-leader">Brad McDonald</div>
+          <div class="dept-note">15 team members + 1 TBH</div>
+        </div>
+        <div class="dept-card highlight">
+          <div class="dept-name">Business Applications &amp; EDM</div>
+          <div class="dept-leader">Eric Harper</div>
+          <div class="dept-note">~30 team members</div>
+        </div>
+        <div class="dept-card highlight">
+          <div class="dept-name">Enterprise PMO (EPMO)</div>
+          <div class="dept-leader">Aryana Taghavi</div>
+          <div class="dept-note">Process &amp; Program Mgmt</div>
+        </div>
+        <div class="dept-card highlight">
+          <div class="dept-name">AI Innovation &amp; COE</div>
+          <div class="dept-leader">Harlon Parrot</div>
+          <div class="dept-note">6 team members</div>
+        </div>
+        <div class="dept-card">
+          <div class="dept-name">IT Infrastructure &amp; Ops</div>
+          <div class="dept-leader">—</div>
+          <div class="dept-note">Networking, Apps Mgmt, D&amp;A, I&amp;O, ITSM</div>
+        </div>
+        <div class="dept-card">
+          <div class="dept-name">Data Management</div>
+          <div class="dept-leader">Clara Min</div>
+          <div class="dept-note">~30 team members</div>
+        </div>
+        <div class="dept-card">
+          <div class="dept-name">BITS Portfolio Mgmt</div>
+          <div class="dept-leader">—</div>
+          <div class="dept-note">IT Systems oversight</div>
+        </div>
+      </div>
+    </div>
+    <hr class="section-divider">
+    <div class="callout">
+      <strong>Josh's peers:</strong> Based on the org, Eric Harper (BizApps) and Harlon Parrot (AI Innovation COE) are peers — all reporting into the BITS structure under Laleh. Aryana Taghavi (EPMO) is also a key partner given the future state changes.
+    </div>
+  </div>
+
+  <!-- REVENUE SYSTEMS -->
+  <div class="panel" id="tab-revsys">
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#a32d2d;"></span>Over capacity</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#185fa5;"></span>AI opportunity</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#ba7517;"></span>Nights/weekends</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#0f6e56;"></span>Sub-team lead</span>
+    </div>
+
+    <div class="revsys-leader">
+      <div class="name">Brad McDonald</div>
+      <div class="title">Revenue Systems Manager</div>
+    </div>
+
+    <div style="font-size:12px;color:#5f5e5a;margin-bottom:14px;">15 direct / indirect reports + 1 open TBH (Data Enrichment)</div>
+
+    <!-- Joellen's sub-team -->
+    <div class="sublead-section">
+      <div class="sublead-header">Joellen Thompson — Sub-team lead (3 reports)</div>
+      <div class="sublead-members">
+        <div class="sublead-member">Danny Meyer</div>
+        <div class="sublead-member">Luis Torres-Garcia</div>
+        <div class="sublead-member">Kerry McCallister <span style="color:#a32d2d;font-size:10px;">151%</span></div>
+      </div>
+    </div>
+
+    <div class="team-grid">
+      <div class="person-card over">
+        <div class="pname">Tim Nickel</div>
+        <div class="prole">SF Dev / Architect</div>
+        <span class="ptag tag-over">185% capacity</span>
+        <span class="ptag tag-ai">AI candidate</span>
+        <span class="ptag tag-nights">Nights/wknds</span>
+      </div>
+      <div class="person-card over">
+        <div class="pname">Ian Jones</div>
+        <div class="prole">Data Engineer</div>
+        <span class="ptag tag-over">170% capacity</span>
+        <span class="ptag tag-ai">AI candidate</span>
+      </div>
+      <div class="person-card over">
+        <div class="pname">Caitlin Monaghan</div>
+        <div class="prole">Systems Analyst</div>
+        <span class="ptag tag-over">135% capacity</span>
+        <span class="ptag tag-nights">Nights/wknds</span>
+      </div>
+      <div class="person-card over">
+        <div class="pname">Michael Despres</div>
+        <div class="prole">SF Admin / Data Ops</div>
+        <span class="ptag tag-over">120% capacity</span>
+        <span class="ptag tag-ai">AI candidate</span>
+      </div>
+      <div class="person-card">
+        <div class="pname">Richard Wipert</div>
+        <div class="prole">Salesforce Admin</div>
+      </div>
+      <div class="person-card">
+        <div class="pname">Alec Quaquarucci</div>
+        <div class="prole">Salesforce Admin</div>
+      </div>
+      <div class="person-card">
+        <div class="pname">Brian Doss</div>
+        <div class="prole">QA / Testing</div>
+        <span class="ptag tag-ai">80% automated</span>
+      </div>
+      <div class="person-card">
+        <div class="pname">Kit Nguyen</div>
+        <div class="prole">Business Analyst</div>
+      </div>
+      <div class="person-card">
+        <div class="pname">Dorisa Astla</div>
+        <div class="prole">CRM Analyst</div>
+      </div>
+      <div class="person-card">
+        <div class="pname">Jazzel To</div>
+        <div class="prole">Ops Coordinator</div>
+      </div>
+      <div class="person-card tbh">
+        <div class="pname">TBH</div>
+        <div class="prole">Data Enrichment</div>
+      </div>
+    </div>
+
+    <div class="change-note">
+      <strong>Note:</strong> Joellen Thompson leads a sub-group of 3 (Danny Meyer, Luis Torres-Garcia, Kerry McCallister) within Brad's org. The org shows 5 + 3 + 3 + 2 groupings suggesting sub-team clusters.
+    </div>
+  </div>
+
+  <!-- EPMO -->
+  <div class="panel" id="tab-epmo">
+    <div class="epmo-leader">
+      <div class="name">Aryana Taghavi</div>
+      <div class="title">Enterprise PMO Leader</div>
+    </div>
+    <div style="font-size:12px;color:#5f5e5a;margin-bottom:14px;">Two functions: Process Management + Program Management</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="dept-card">
+        <div class="dept-name">Business Process Management</div>
+        <div class="dept-leader">Jill Lancaster</div>
+        <div style="margin-top:8px;font-size:11px;color:#5f5e5a;">Cheyenne Tzigos · Diana Gilbert · Tiffany Rich · Dalton Parker · Scott Brezniak (leave)</div>
+      </div>
+      <div class="dept-card">
+        <div class="dept-name">Program Management (BITS PMO)</div>
+        <div class="dept-leader">Ashley Shutack</div>
+        <div style="margin-top:8px;font-size:11px;color:#5f5e5a;">Melissa Griffiths · Natalie Conkel · Spencer Waters · Sara Lopez Gutierrez</div>
+      </div>
+    </div>
+
+    <div class="dept-card" style="margin-bottom:12px;">
+      <div class="dept-name">AI Innovation &amp; COE</div>
+      <div class="dept-leader">Harlon Parrot</div>
+      <div style="margin-top:8px;font-size:11px;color:#5f5e5a;">Shawn LoPresto · Brandon Behman · Julia Shi · Lis Frey · Vinay Ethiraj · Yash Baleri</div>
+    </div>
+
+    <div class="change-note">
+      <strong>Current state (Phase I — NOW):</strong> IT PMO resources are being combined with the EPMO to manage BizApps, IT, and enterprise projects/programs. Sara Loehwing moves from IT&O to PMO. Ryan Klawinski moves from Data &amp; Analytics to PMO as a scrum master. Natalie Conkel exits.
+    </div>
+  </div>
+
+  <!-- FUTURE STATE -->
+  <div class="panel" id="tab-future">
+
+    <div class="phase-card phase1">
+      <div class="phase-title">Phase I — NOW</div>
+      <div class="phase-body">IT PMO resources combine with the EPMO to manage BizApps, IT, and Enterprise projects/programs. Sara Loehwing, Jason Bowling, Rebecca Dunzweiler, Ahira Torres move from IT&amp;O into PMO. Ryan Klawinski moves from Data &amp; Analytics into PMO. Mary Jirak and Alan Venable stay with Cory Rice in IT&amp;O. Richard Sands and Alex Justice exit.</div>
+    </div>
+
+    <div class="phase-card phase2">
+      <div class="phase-title">Phase II — TBD</div>
+      <div class="phase-body">Revenue Systems team gets split. Operations and data management work goes to RevOps. Focused, dedicated system analysts move under Josh as <strong>"PDMs"</strong> (Product Delivery Managers). This is described as TBD and subject to further planning.</div>
+    </div>
+
+    <hr class="section-divider">
+
+    <div class="josh-future">
+      <h4>📋 Josh's proposed future org (from Slide 13)</h4>
+      <p style="font-size:12px;color:#5f5e5a;margin-bottom:10px;">The deck explicitly places Josh Magnuson in the future EPMO structure under Aryana Taghavi, with system analysts reporting to him. Noted as "All this TBD."</p>
+      <div class="future-reports">
+        <div class="future-person">
+          <div class="fn">Richard Wipert</div>
+          <div class="fr">System Analyst</div>
+        </div>
+        <div class="future-person">
+          <div class="fn">Tim Nickel</div>
+          <div class="fr">System Analyst</div>
+        </div>
+        <div class="future-person">
+          <div class="fn">Danny Meyer</div>
+          <div class="fr">System Analyst</div>
+        </div>
+        <div class="future-person" style="border-style:dashed;">
+          <div class="fn">TBD</div>
+          <div class="fr">HRIS / FinSys</div>
+        </div>
+      </div>
+      <div class="change-note" style="margin-top:10px;">
+        <strong>Verbatim from deck (Slide 13):</strong> "All this TBD. But the idea would be to move 'system analysts' under you. Could potentially move some BPM or make them all 'analysts' with AI doing the heavy lifting on requirements, UAT planning, etc."
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>What this means for Josh:</strong> The org deck signals a significant re-org where Josh's team could be carved out of Brad's current RevSys group — specifically the system analyst function. The operational/data management work stays with RevOps. This is the re-org Joellen's doc was anticipating. Tim Nickel (185% capacity, SF architect) and Richard Wipert are explicitly named in the proposed future state as Josh's direct reports.
+    </div>
+
+    <hr class="section-divider">
+
+    <div style="font-size:12px;color:#5f5e5a;font-weight:600;margin-bottom:8px;">Summary of all personnel changes in the deck</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="background:#1a1a2e;color:#fff;">
+          <th style="padding:8px 10px;text-align:left;border:0.5px solid #333;">Person</th>
+          <th style="padding:8px 10px;text-align:left;border:0.5px solid #333;">Current</th>
+          <th style="padding:8px 10px;text-align:left;border:0.5px solid #333;">Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:#f5f4f0;">
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Sara Loehwing</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">IT &amp; Operations</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;color:#0f6e56;">Moves to PMO — IC role</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Ryan Klawinski</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Data &amp; Analytics (Scrum Master)</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;color:#0f6e56;">Moves to PMO under Ashley</td>
+        </tr>
+        <tr style="background:#f5f4f0;">
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Natalie Conkel</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">PMO under Ashley</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;color:#a32d2d;">Exits</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Richard Sands</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">IT &amp; Operations</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;color:#a32d2d;">Exits</td>
+        </tr>
+        <tr style="background:#f5f4f0;">
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Alex Justice</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">IT &amp; Operations</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;color:#a32d2d;">Exits</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Scott Brezniak</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">EPMO / BPM</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;color:#ba7517;">On leave</td>
+        </tr>
+        <tr style="background:#f5f4f0;">
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Richard Wipert, Tim Nickel, Danny Meyer</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;">Revenue Systems (Brad)</td>
+          <td style="padding:7px 10px;border:0.5px solid #e0dfd8;color:#ba7517;">Phase II TBD → Josh's org as PDMs</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
