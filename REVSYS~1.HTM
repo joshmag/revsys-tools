@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RevSystems Workload Analysis</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; font-size: 14px; line-height: 1.5; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 24px 20px 48px; }
+
+  .header { margin-bottom: 24px; }
+  .header h1 { font-size: 20px; font-weight: 500; color: #1a1a1a; margin-bottom: 2px; }
+  .header p { font-size: 13px; color: #5f5e5a; }
+
+  .notes-panel { background: #fffde7; border: 1px solid #f9d71c33; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; }
+  .notes-panel h3 { font-size: 12px; font-weight: 500; color: #854f0b; margin-bottom: 6px; letter-spacing: 0.03em; text-transform: uppercase; }
+  .notes-panel textarea { width: 100%; background: transparent; border: none; outline: none; font-size: 13px; color: #444; line-height: 1.6; resize: none; min-height: 56px; font-family: inherit; }
+  .notes-save { font-size: 12px; color: #0c447c; cursor: pointer; background: none; border: none; padding: 0; margin-top: 4px; }
+  .notes-save:hover { text-decoration: underline; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .metric { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 8px; padding: 12px 14px; }
+  .metric-label { font-size: 11px; color: #888780; margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; }
+  .metric-value.danger { color: #a32d2d; }
+  .metric-value.info { color: #185fa5; }
+  .metric-value.warning { color: #854f0b; }
+
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 0.5px solid #ccc; background: #fff; color: #5f5e5a; cursor: pointer; transition: all 0.15s; }
+  .filter-btn:hover { background: #f0efe8; }
+  .filter-btn.active { background: #e6f1fb; color: #185fa5; border-color: #b5d4f4; }
+  .search-box { font-size: 13px; padding: 5px 10px; border-radius: 6px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; width: 200px; outline: none; }
+  .search-box:focus { border-color: #185fa5; }
+  .export-btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 0.5px solid #ccc; background: #fff; color: #5f5e5a; cursor: pointer; margin-left: auto; }
+  .export-btn:hover { background: #f0efe8; }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .legend-label { font-size: 11px; color: #888780; font-weight: 500; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #5f5e5a; }
+  .legend-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+
+  .person-card { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 14px 16px; transition: border-color 0.15s; }
+  .person-card:hover { border-color: #b4b2a9; }
+  .person-card.reviewed { border-left: 3px solid #0f6e56; }
+  .person-card.flagged { border-left: 3px solid #a32d2d; }
+  .person-card.action { border-left: 3px solid #185fa5; }
+
+  .card-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; flex-shrink: 0; }
+  .card-name { font-weight: 500; font-size: 14px; color: #1a1a1a; }
+  .card-role { font-size: 11px; color: #888780; }
+  .card-pct { font-size: 17px; font-weight: 500; flex-shrink: 0; }
+
+  .cap-bar-wrap { margin-bottom: 8px; }
+  .cap-row { display: flex; justify-content: space-between; font-size: 11px; color: #888780; margin-bottom: 2px; }
+  .cap-bar { height: 5px; border-radius: 3px; background: #e8e6de; overflow: hidden; }
+  .cap-fill { height: 100%; border-radius: 3px; }
+
+  .seg-label { font-size: 11px; color: #888780; margin-bottom: 3px; }
+  .seg-bar { height: 7px; border-radius: 4px; display: flex; overflow: hidden; gap: 1px; margin-bottom: 10px; }
+  .seg { height: 100%; flex-shrink: 0; }
+
+  .auto-row { display: flex; gap: 14px; margin-bottom: 10px; }
+  .auto-item { text-align: center; flex: 1; }
+  .auto-val { font-size: 14px; font-weight: 500; }
+  .auto-sub { font-size: 10px; color: #888780; }
+
+  .badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 5px; font-weight: 500; }
+
+  .ai-note { font-size: 11px; color: #0c447c; background: #e6f1fb; border-radius: 5px; padding: 5px 8px; margin-bottom: 8px; }
+
+  .status-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; border-top: 0.5px solid #f0efe8; padding-top: 8px; }
+  .status-label { font-size: 11px; color: #888780; }
+  .status-select { font-size: 11px; padding: 2px 6px; border-radius: 4px; border: 0.5px solid #ccc; background: #f5f4f0; color: #1a1a1a; cursor: pointer; outline: none; flex: 1; }
+  .notes-input { font-size: 11px; padding: 2px 6px; border-radius: 4px; border: 0.5px solid #ccc; background: #f5f4f0; color: #1a1a1a; width: 100%; outline: none; }
+  .notes-row { margin-top: 5px; }
+
+  .empty-state { font-size: 13px; color: #888780; padding: 32px 0; text-align: center; }
+
+  .export-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+  .export-modal.open { display: flex; }
+  .export-box { background: #fff; border-radius: 10px; padding: 20px 24px; width: 560px; max-width: 95vw; max-height: 80vh; overflow: auto; }
+  .export-box h3 { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+  .export-box pre { font-size: 11px; background: #f5f4f0; border-radius: 6px; padding: 12px; white-space: pre-wrap; font-family: 'Courier New', monospace; color: #1a1a1a; max-height: 380px; overflow: auto; }
+  .export-close { font-size: 13px; color: #185fa5; cursor: pointer; background: none; border: none; padding: 0; margin-top: 10px; }
+  .copy-btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 0.5px solid #ccc; background: #fff; cursor: pointer; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>RevSystems — Workload Analysis</h1>
+    <p>As of April 29, 2026 &nbsp;·&nbsp; 15 team members &nbsp;·&nbsp; Source: RevSystems Workload Analysis (04.29.26).xlsx</p>
+  </div>
+
+  <div class="notes-panel">
+    <h3>📋 Exec observations</h3>
+    <textarea id="execNotes" placeholder="Add notes here — e.g. key themes, re-org considerations, talking points for Joel..."></textarea>
+    <button class="notes-save" onclick="saveNotes()">Save notes</button>
+  </div>
+
+  <div class="summary-grid">
+    <div class="metric"><div class="metric-label">Team size</div><div class="metric-value">15</div></div>
+    <div class="metric"><div class="metric-label">Over capacity (&gt;100%)</div><div class="metric-value danger">5</div></div>
+    <div class="metric"><div class="metric-label">Nights/weekends reported</div><div class="metric-value warning">5</div></div>
+    <div class="metric"><div class="metric-label">AI automation candidates</div><div class="metric-value info">6</div></div>
+  </div>
+
+  <div class="controls">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All 15</button>
+    <button class="filter-btn" onclick="setFilter('over',this)">⚠ Over capacity</button>
+    <button class="filter-btn" onclick="setFilter('nights',this)">🌙 Nights/weekends</button>
+    <button class="filter-btn" onclick="setFilter('ai',this)">✦ AI opportunity</button>
+    <button class="filter-btn" onclick="setFilter('flagged',this)">🚩 Flagged</button>
+    <button class="filter-btn" onclick="setFilter('reviewed',this)">✓ Reviewed</button>
+    <input type="text" class="search-box" id="searchBox" placeholder="Search name or role..." oninput="render()">
+    <button class="export-btn" onclick="openExport()">Export summary ↗</button>
+  </div>
+
+  <div class="legend">
+    <span class="legend-label">Time by area:</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#185FA5"></span>Solution def</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#0F6E56"></span>Sys admin</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Config</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#A32D2D"></span>Testing</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#534AB7"></span>Data mgmt</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Support</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#888780"></span>Admin/mtgs</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#B4B2A9"></span>Leadership</span>
+  </div>
+
+  <div class="card-grid" id="cardGrid"></div>
+  <div class="empty-state" id="emptyState" style="display:none">No team members match this filter.</div>
+
+</div>
+
+<div class="export-modal" id="exportModal">
+  <div class="export-box">
+    <h3>RevSystems workload — export summary</h3>
+    <pre id="exportText"></pre>
+    <button class="copy-btn" onclick="copyExport()">Copy to clipboard</button>
+    <br>
+    <button class="export-close" onclick="closeExport()">Close</button>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#185FA5','#0F6E56','#BA7517','#A32D2D','#534AB7','#3B6D11','#888780','#B4B2A9'];
+const CATS = ['Sol Def','Sys Admin','Config','Testing','Data Mgmt','Support','Admin/Mtgs','Leadership'];
+
+const team = [
+  { id:'brad', name:'Brad', role:'RevOps / HubSpot Admin', initials:'B', color:'#185FA5',
+    total:100, segs:[10,10,30,5,10,5,20,10], manual:60, partial:30, auto:10, nights:false,
+    ai:true, aiNote:'HubSpot workflow automation for manual data ops', tools:'HubSpot, Salesloft' },
+  { id:'danny', name:'Danny', role:'Systems Analyst', initials:'D', color:'#0F6E56',
+    total:100, segs:[15,5,15,15,20,5,20,5], manual:65, partial:20, auto:15, nights:true,
+    ai:false, aiNote:'', tools:'Salesforce, HubSpot' },
+  { id:'joellen', name:'Joellen', role:'RevSys Manager / Leader', initials:'J', color:'#BA7517',
+    total:100, segs:[20,5,10,10,10,5,15,25], manual:50, partial:30, auto:20, nights:true,
+    ai:false, aiNote:'', tools:'ChurnZero, HubSpot, Salesloft, SalesOS, Chorus, LinkedIn, ZI GTM, Clay, Suger, Crossbeam' },
+  { id:'richard', name:'Richard', role:'Salesforce Admin', initials:'R', color:'#534AB7',
+    total:100, segs:[10,20,30,10,10,10,10,0], manual:55, partial:35, auto:10, nights:false,
+    ai:false, aiNote:'', tools:'Salesforce' },
+  { id:'tim', name:'Tim', role:'SF Dev / Architect', initials:'T', color:'#A32D2D',
+    total:185, segs:[30,20,40,25,30,10,20,10], manual:45, partial:35, auto:20, nights:true,
+    ai:true, aiNote:'SF agent vision for automated field updates and workflow orchestration', tools:'Salesforce' },
+  { id:'kerry', name:'Kerry', role:'Data & Reporting Analyst', initials:'K', color:'#3B6D11',
+    total:151, segs:[10,5,10,15,50,10,25,26], manual:70, partial:20, auto:10, nights:true,
+    ai:false, aiNote:'', tools:'Salesforce, HubSpot, BI tools' },
+  { id:'luis', name:'Luis', role:'Marketing Ops / Automation', initials:'L', color:'#185FA5',
+    total:95, segs:[15,10,20,10,15,10,15,0], manual:40, partial:35, auto:25, nights:false,
+    ai:true, aiNote:'SDR pass automation — reduce manual handoff steps', tools:'HubSpot, Salesloft, Clay' },
+  { id:'alec', name:'Alec', role:'Salesforce Admin', initials:'A', color:'#0F6E56',
+    total:100, segs:[10,20,25,10,15,10,10,0], manual:55, partial:30, auto:15, nights:false,
+    ai:false, aiNote:'', tools:'Salesforce' },
+  { id:'brian', name:'Brian', role:'QA / Testing Specialist', initials:'Br', color:'#BA7517',
+    total:100, segs:[5,5,10,50,10,5,15,0], manual:15, partial:5, auto:80, nights:false,
+    ai:false, aiNote:'Already highly automated on testing — benchmark for others', tools:'Salesforce, Test tools' },
+  { id:'kit', name:'Kit', role:'Business Analyst', initials:'Ki', color:'#534AB7',
+    total:100, segs:[30,5,10,15,10,15,15,0], manual:60, partial:25, auto:15, nights:false,
+    ai:false, aiNote:'', tools:'HubSpot, Salesforce' },
+  { id:'caitlin', name:'Caitlin', role:'Systems Analyst', initials:'C', color:'#A32D2D',
+    total:135, segs:[15,10,20,20,20,15,25,10], manual:55, partial:30, auto:15, nights:true,
+    ai:false, aiNote:'', tools:'Salesforce, HubSpot' },
+  { id:'dorisa', name:'Dorisa', role:'CRM Analyst', initials:'Do', color:'#3B6D11',
+    total:100, segs:[10,10,20,10,20,15,15,0], manual:60, partial:25, auto:15, nights:false,
+    ai:false, aiNote:'', tools:'Salesforce, HubSpot' },
+  { id:'jazzel', name:'Jazzel', role:'Operations Coordinator', initials:'Jz', color:'#888780',
+    total:100, segs:[10,5,15,10,20,20,20,0], manual:65, partial:20, auto:15, nights:false,
+    ai:false, aiNote:'', tools:'HubSpot, Salesloft' },
+  { id:'ian', name:'Ian', role:'Data Engineer', initials:'I', color:'#185FA5',
+    total:170, segs:[5,10,5,15,75,10,30,20], manual:70, partial:20, auto:10, nights:false,
+    ai:true, aiNote:'Heavy data management load (75%) — prime candidate for automated pipelines', tools:'Salesforce, data tools' },
+  { id:'michael', name:'Michael', role:'SF Admin / Data Ops', initials:'M', color:'#534AB7',
+    total:120, segs:[10,15,15,10,60,10,10,0], manual:50, partial:30, auto:20, nights:false,
+    ai:true, aiNote:'SF metadata agent concept — automate config documentation', tools:'Salesforce' },
+];
+
+let activeFilter = 'all';
+let statuses = {};
+let cardNotes = {};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('revsys_statuses');
+    if (s) statuses = JSON.parse(s);
+    const n = localStorage.getItem('revsys_notes');
+    if (n) cardNotes = JSON.parse(n);
+    const en = localStorage.getItem('revsys_exec_notes');
+    if (en) document.getElementById('execNotes').value = en;
+  } catch(e) {}
+}
+
+function saveNotes() {
+  localStorage.setItem('revsys_exec_notes', document.getElementById('execNotes').value);
+  const btn = document.querySelector('.notes-save');
+  btn.textContent = 'Saved ✓';
+  setTimeout(() => btn.textContent = 'Save notes', 1500);
+}
+
+function setStatus(id, val) {
+  statuses[id] = val;
+  localStorage.setItem('revsys_statuses', JSON.stringify(statuses));
+  render();
+}
+
+function setCardNote(id, val) {
+  cardNotes[id] = val;
+  localStorage.setItem('revsys_notes', JSON.stringify(cardNotes));
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function render() {
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const grid = document.getElementById('cardGrid');
+  const empty = document.getElementById('emptyState');
+
+  const filtered = team.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search) && !p.role.toLowerCase().includes(search)) return false;
+    const st = statuses[p.id] || 'none';
+    if (activeFilter === 'over' && p.total <= 100) return false;
+    if (activeFilter === 'nights' && !p.nights) return false;
+    if (activeFilter === 'ai' && !p.ai) return false;
+    if (activeFilter === 'flagged' && st !== 'flagged') return false;
+    if (activeFilter === 'reviewed' && st !== 'reviewed') return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(p => {
+    const over = p.total > 100;
+    const capColor = over ? '#a32d2d' : (p.total >= 90 ? '#ba7517' : '#0f6e56');
+    const fillPct = Math.min(Math.round((p.total / 150) * 100), 100);
+    const segTotal = p.segs.reduce((a,b)=>a+b,0);
+    const segBars = p.segs.map((s,i) => {
+      const pct = segTotal > 0 ? Math.round((s/segTotal)*100) : 0;
+      return pct > 0 ? `<div class="seg" style="width:${pct}%;background:${COLORS[i]};" title="${CATS[i]}: ${s}%"></div>` : '';
+    }).join('');
+
+    const st = statuses[p.id] || 'none';
+    const cardClass = st === 'none' ? '' : st;
+    const noteVal = cardNotes[p.id] || '';
+
+    const badges = [];
+    if (over) badges.push(`<span class="badge" style="background:#fcebeb;color:#a32d2d;">${p.total}% capacity</span>`);
+    if (p.nights) badges.push(`<span class="badge" style="background:#faeeda;color:#854f0b;">Nights/wknds</span>`);
+    if (p.ai) badges.push(`<span class="badge" style="background:#e6f1fb;color:#185fa5;">AI opportunity</span>`);
+    if (st === 'reviewed') badges.push(`<span class="badge" style="background:#e1f5ee;color:#085041;">Reviewed</span>`);
+    if (st === 'flagged') badges.push(`<span class="badge" style="background:#fcebeb;color:#a32d2d;">Flagged</span>`);
+    if (st === 'action') badges.push(`<span class="badge" style="background:#e6f1fb;color:#0c447c;">Action needed</span>`);
+
+    const autoColor = p.auto >= 50 ? '#0f6e56' : (p.auto >= 20 ? '#ba7517' : '#a32d2d');
+
+    return `
+    <div class="person-card ${cardClass}" id="card-${p.id}">
+      <div class="card-top">
+        <div class="avatar" style="background:${p.color}22;color:${p.color};">${p.initials}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="card-name">${p.name}</div>
+          <div class="card-role">${p.role}</div>
+        </div>
+        <div class="card-pct" style="color:${capColor};">${p.total}%</div>
+      </div>
+
+      <div class="cap-bar-wrap">
+        <div class="cap-row"><span>Capacity</span><span style="color:${capColor};">${p.total} / 100%</span></div>
+        <div class="cap-bar"><div class="cap-fill" style="width:${fillPct}%;background:${capColor};"></div></div>
+      </div>
+
+      <div class="seg-label" style="margin-top:8px;">Time allocation</div>
+      <div class="seg-bar">${segBars}</div>
+
+      <div class="auto-row">
+        <div class="auto-item"><div class="auto-val" style="color:#a32d2d;">${p.manual}%</div><div class="auto-sub">Manual</div></div>
+        <div class="auto-item"><div class="auto-val" style="color:#ba7517;">${p.partial}%</div><div class="auto-sub">Partial auto</div></div>
+        <div class="auto-item"><div class="auto-val" style="color:${autoColor};">${p.auto}%</div><div class="auto-sub">Full auto</div></div>
+      </div>
+
+      ${badges.length ? `<div class="badges">${badges.join('')}</div>` : ''}
+      ${p.ai && p.aiNote ? `<div class="ai-note">✦ ${p.aiNote}</div>` : ''}
+
+      <div class="status-row">
+        <span class="status-label">Status:</span>
+        <select class="status-select" onchange="setStatus('${p.id}', this.value)">
+          <option value="none" ${st==='none'?'selected':''}>— not reviewed</option>
+          <option value="reviewed" ${st==='reviewed'?'selected':''}>✓ Reviewed</option>
+          <option value="flagged" ${st==='flagged'?'selected':''}>🚩 Flagged</option>
+          <option value="action" ${st==='action'?'selected':''}>⚡ Action needed</option>
+        </select>
+      </div>
+      <div class="notes-row">
+        <input type="text" class="notes-input" placeholder="Private note..." value="${noteVal.replace(/"/g,'&quot;')}" oninput="setCardNote('${p.id}',this.value)" />
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openExport() {
+  const lines = ['RevSystems Workload Analysis — Summary', '=' .repeat(50), ''];
+  const execNote = document.getElementById('execNotes').value.trim();
+  if (execNote) {
+    lines.push('EXEC OBSERVATIONS');
+    lines.push(execNote);
+    lines.push('');
+  }
+  lines.push('TEAM MEMBERS');
+  lines.push('-'.repeat(50));
+  team.forEach(p => {
+    const st = statuses[p.id] || '';
+    const note = cardNotes[p.id] || '';
+    lines.push(`${p.name} — ${p.role}`);
+    lines.push(`  Capacity: ${p.total}%${p.total>100?' ⚠ OVER':''} | Manual: ${p.manual}% | Auto: ${p.auto}%`);
+    if (p.nights) lines.push('  ⚠ Working nights/weekends');
+    if (p.ai) lines.push(`  ✦ AI opportunity: ${p.aiNote}`);
+    if (st && st !== 'none') lines.push(`  Status: ${st.toUpperCase()}`);
+    if (note) lines.push(`  Note: ${note}`);
+    lines.push('');
+  });
+  document.getElementById('exportText').textContent = lines.join('\n');
+  document.getElementById('exportModal').classList.add('open');
+}
+
+function closeExport() {
+  document.getElementById('exportModal').classList.remove('open');
+}
+
+function copyExport() {
+  const text = document.getElementById('exportText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => btn.textContent = 'Copy to clipboard', 1500);
+  });
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>
